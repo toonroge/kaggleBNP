@@ -2,11 +2,16 @@
 
 library(shiny) ; library(data.table)
 
-data <- as.data.frame(fread("train.csv")) # never worked with data.table, change code later
+data <-
+  as.data.frame(fread("train.csv")) # never worked with data.table, change code later
 
 # extract numeric vars for selection in UI
 numeric_vars <- names(data[, sapply(data, is.numeric)])
 numeric_vars <- numeric_vars[!numeric_vars %in% c("ID", "target")]
+
+categorical_vars <- names(data[,!sapply(data, is.numeric)])
+categorical_vars <-
+  categorical_vars[!categorical_vars %in% c("v22")] # to prevent bug - fix stillS
 
 shinyUI(navbarPage(
   "Stage 1: Exploratory Analysis",
@@ -59,13 +64,13 @@ shinyUI(navbarPage(
                     ))),
              
              fluidRow(
-               column(3, "Complete here with an explanation of the panel."),
+               column(3, "Complete here with an explanation of the panel. 
+                          Should still enable functionality for filtering most/least ocurring.
+                          Add count for number of blank categorical values.
+                      "),
                
-               column(
-                 2, align = "center",
-                 wellPanel(tableOutput(outputId = "out_1_1_table1"))
-                 
-               ),
+               column(2, align = "center",
+                      wellPanel(tableOutput(outputId = "out_1_1_table1"))),
                column(2, align = "center",
                       wellPanel(tableOutput(outputId = "out_1_1_table2"))),
                
@@ -80,10 +85,52 @@ shinyUI(navbarPage(
   tabPanel(
     "1.2 Categorical variables one way",
     
-    "This sheet is the next to construct, put some
-    interesting plots customized for categorical features"
-    
-    
+    fluidPage(
+      fluidRow(column(
+        3,
+        wellPanel(
+          selectInput(
+            inputId = "in_1_2_var",
+            label = "Select your categorical variable:",
+            choices = categorical_vars
+          ),
+          
+          radioButtons(
+            inputId = "in_1_2_plot_direction",
+            label = "Select plot orientation:",
+            choices = c("horizontal", "vertical")
+          ),
+          
+          selectInput(
+            inputId = "in_1_2_plot_subset",
+            label = "Select subset:",
+            choices = c("top5", "top10", "bottom5", "bottom10", "all")
+          )
+          
+          
+        )
+        
+      ),
+      
+      column(9,
+             wellPanel(
+               plotOutput(outputId = "out_1_2_main_plot", height = "420px")
+             ))),
+      
+      fluidRow(
+        column(3, "Complete here with an explanation of the panel."),
+        
+        column(3, align = "center",
+               wellPanel(tableOutput(outputId = "out_1_2_table1"))),
+        
+        column(3, align = "center",
+               wellPanel(tableOutput(outputId = "out_1_2_table2"))),
+        
+        column(3, align = "center",
+               wellPanel(tableOutput(outputId = "out_1_2_table3")))
+      )
+      
+    )
   )
   
 ))

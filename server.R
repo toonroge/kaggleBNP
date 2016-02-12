@@ -111,6 +111,29 @@ shinyServer(function(input, output) {
     round(sum(is.na(data()[[input$var]])) / nrow(data()), 2)
   })
   
+  
+  ##################### Indicators for 1_2 #####################
+  
+  out_1_2_most_occuring <- reactive({
+    data() %>% group_by_(input$in_1_2_var) %>% summarize(n = n()) %>% arrange(desc(n)) %>% head(3)
+  })
+  
+  out_1_2_least_occuring <- reactive({
+    data() %>% group_by_(input$in_1_2_var) %>% summarize(n = n()) %>% arrange(n) %>% head(3)
+  })
+  
+  out_1_2_pctg_missing <- reactive({
+    round(sum(is.na(data()[[input$in_1_2_var]])) / nrow(data()), 2)
+  })
+  
+  out_1_2_less_100obs <- reactive({
+    data() %>% group_by_(input$in_1_2_var) %>% summarize(n = n()) %>% filter(n < 100) %>% nrow()
+  })
+  
+  out_1_2_levels <- reactive({
+    length(levels(as.factor(data()[[input$in_1_2_var]])))
+  })
+  
   ##################### Output elements #####################
   
   output$main_plot <- renderPlot({
@@ -169,5 +192,58 @@ shinyServer(function(input, output) {
     data.frame(names = names, values = values, count = count)
     
   })
+  
+  ################## Output elements panel 1_2 ########################
+  
+  output$out_1_2_main_plot <- renderPlot({
+    # Part before determination horizontal/vertical
+    # v22 gives a bug - fix this still
+    p <-
+      ggplot(data(), aes(x = as.factor(data()[[input$in_1_2_var]]))) +
+      geom_bar()
+    
+    # if horizontal
+    if (input$in_1_2_plot_direction == "horizontal") {
+      # get dataframe with info for vertical lines
+      p + coord_flip()
+      
+    }
+    
+    # if vertical
+    else{
+      p
+    }
+    
+  })
+  
+  output$out_1_2_table1 <- renderTable({
+    data <- data.frame(
+      names = c("1stMost", "2ndMost", "3thMost"),
+      values = out_1_2_most_occuring()[, 1],
+      count = out_1_2_most_occuring()[, 2],
+      pctg = round(out_1_2_most_occuring()[, 2] / nrow(data()), 2)
+    )
+    names(data) <- c("names", "values", "count", "pctg")
+    data
+  })
+  
+  output$out_1_2_table2 <- renderTable({
+    data <- data.frame(
+      names = c("1stLeast", "2ndLeast", "3thLeast"),
+      values = out_1_2_least_occuring()[, 1],
+      count = out_1_2_least_occuring()[, 2],
+      pctg = round(out_1_2_least_occuring()[, 2] / nrow(data()), 2)
+    )
+    names(data) <- c("names", "values", "count", "pctg")
+    data
+  })
+  
+  output$out_1_2_table3 <- renderTable({
+    data <- data.frame(
+      names = c("levels", "<100 obs", "pctg missing"),
+      values = c(out_1_2_levels(), out_1_2_less_100obs(), out_1_2_pctg_missing())
+    )
+  })
+  
   
 })

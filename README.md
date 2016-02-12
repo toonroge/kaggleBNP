@@ -1,3 +1,5 @@
+These are just some ideas. Feel free to change/update.
+
 ### STAGE 1:
 
 Set up a shiny app for a decent exploratory analysis.
