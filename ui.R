@@ -13,124 +13,176 @@ categorical_vars <- names(data[,!sapply(data, is.numeric)])
 categorical_vars <-
   categorical_vars[!categorical_vars %in% c("v22")] # to prevent bug - fix stillS
 
-shinyUI(navbarPage(
-  "Stage 1: Exploratory Analysis",
-  
-  tabPanel("1.0 Readme",
-           
-           "This app is for exploratory analysis of the data."),
-  
-  tabPanel("1.1 Numeric Variables One Way",
-           
-           fluidPage(
-             fluidRow(column(
-               3,
-               wellPanel(
-                 selectInput(
-                   inputId = "var",
-                   label = "Select your numeric variable:",
-                   choices = numeric_vars
-                 ),
-                 
-                 sliderInput(
-                   inputId = "n_breaks",
-                   label = "Number of bins in histogram:",
-                   min = 50, max = 1000, value = 100, step = 50
-                 ),
-                 
-                 sliderInput(
-                   inputId = "range",
-                   label = "The range of the X interval:",
-                   min = 0, max = 1, value = c(0, 1), step = 0.01
-                 ),
-                 
-                 selectInput(
-                   inputId = "in_1_1_transform",
-                   label = "Select your tranformation:",
-                   choices = c("none", "sqrt", "log")
-                 ),
-                 
-                 checkboxInput(inputId = "average", label = "Add indicators"),
-                 
-                 checkboxInput(inputId = "in_1_1_round", label = "Round (2dec)")
-                 
-               )
-               
-             ),
-             
-             column(9,
-                    wellPanel(
-                      plotOutput(outputId = "main_plot", height = "420px")
-                    ))),
-             
-             fluidRow(
-               column(3, "Complete here with an explanation of the panel. 
-                          Should still enable functionality for filtering most/least ocurring.
-                          Add count for number of blank categorical values.
-                      "),
-               
-               column(2, align = "center",
-                      wellPanel(tableOutput(outputId = "out_1_1_table1"))),
-               column(2, align = "center",
-                      wellPanel(tableOutput(outputId = "out_1_1_table2"))),
-               
-               column(2, align = "center",
-                      wellPanel(tableOutput(outputId = "out_1_1_table3"))),
-               
-               column(3, align = "center",
-                      wellPanel(tableOutput(outputId = "out_1_1_table4")))
-             )
-             
-           )),
-  tabPanel(
-    "1.2 Categorical variables one way",
+shinyUI(
+  navbarPage(
+    "Stage 1: Exploratory Analysis",
     
-    fluidPage(
-      fluidRow(column(
-        3,
-        wellPanel(
-          selectInput(
-            inputId = "in_1_2_var",
-            label = "Select your categorical variable:",
-            choices = categorical_vars
-          ),
-          
-          radioButtons(
-            inputId = "in_1_2_plot_direction",
-            label = "Select plot orientation:",
-            choices = c("horizontal", "vertical")
-          ),
-          
-          selectInput(
-            inputId = "in_1_2_plot_subset",
-            label = "Select subset:",
-            choices = c("top5", "top10", "bottom5", "bottom10", "all")
+    tabPanel("1.0 Readme",
+             
+             "This app is for exploratory analysis of the data."),
+    
+    tabPanel("1.1 Numeric Variables One Way",
+             
+             fluidPage(
+               fluidRow(column(
+                 3,
+                 wellPanel(
+                   selectInput(
+                     inputId = "var",
+                     label = "Select your numeric variable:",
+                     choices = numeric_vars
+                   ),
+                   
+                   sliderInput(
+                     inputId = "n_breaks",
+                     label = "Number of bins in histogram:",
+                     min = 50, max = 1000, value = 100, step = 50
+                   ),
+                   
+                   sliderInput(
+                     inputId = "range",
+                     label = "The range of the X interval:",
+                     min = 0, max = 1, value = c(0, 1), step = 0.01
+                   ),
+                   
+                   selectInput(
+                     inputId = "in_1_1_transform",
+                     label = "Select your tranformation:",
+                     choices = c("none", "sqrt", "log")
+                   ),
+                   
+                   checkboxInput(inputId = "average", label = "Add indicators"),
+                   
+                   checkboxInput(inputId = "in_1_1_round", label = "Round (2dec)"),
+                   
+                   "This panel allows for the investigation of the nu;erical variables."
+                   
+                 )
+                 
+               ),
+               
+               column(9,
+                      wellPanel(
+                        plotOutput(outputId = "main_plot", height = "420px")
+                      ))),
+               
+               fluidRow(
+                 
+                 column(2, offset = 3, align = "center",
+                        wellPanel(tableOutput(outputId = "out_1_1_table1"))),
+                 column(2, align = "center",
+                        wellPanel(tableOutput(outputId = "out_1_1_table2"))),
+                 
+                 column(2, align = "center",
+                        wellPanel(tableOutput(outputId = "out_1_1_table3"))),
+                 
+                 column(3, align = "center",
+                        wellPanel(tableOutput(outputId = "out_1_1_table4")))
+                 )
+               
+               )),
+    tabPanel(
+      "1.2 Categorical variables one way",
+      
+      fluidPage(
+        fluidRow(column(
+          3,
+          wellPanel(
+            selectInput(
+              inputId = "in_1_2_var",
+              label = "Select your categorical variable:",
+              choices = categorical_vars
+            ),
+            
+            radioButtons(
+              inputId = "in_1_2_plot_direction",
+              label = "Select plot orientation:",
+              choices = c("horizontal", "vertical")
+            ),
+            
+            selectInput(
+              inputId = "in_1_2_plot_subset",
+              label = "Select subset:",
+              choices = c("top5", "top10", "bottom5", "bottom10", "all")
+            ),
+            
+            "This panel allows you to investigate the distribution of the diffeent categorical variables.
+            Still enable functionality of most and least occurring."
+            
+            
           )
           
+        ),
+        
+        column(9,
+               wellPanel(
+                 plotOutput(outputId = "out_1_2_main_plot", height = "420px")
+               ))),
+        
+        fluidRow(
           
+          column(3, offset = 3, align = "center",
+                 wellPanel(tableOutput(outputId = "out_1_2_table1"))),
+          
+          column(3, align = "center",
+                 wellPanel(tableOutput(outputId = "out_1_2_table2"))),
+          
+          column(3, align = "center",
+                 wellPanel(tableOutput(outputId = "out_1_2_table3")))
+          )
+        
         )
-        
-      ),
-      
-      column(9,
-             wellPanel(
-               plotOutput(outputId = "out_1_2_main_plot", height = "420px")
+    ),
+    
+    tabPanel("1.3 Correlation Analysis",
+             
+             fluidPage(fluidRow(
+               column(
+                 3,
+                 wellPanel(
+                   sliderInput(
+                     inputId = "in_1_3_limit",
+                     label = "Correlation absolute value treshold",
+                     min = 0, max = 0.99, value = 0.85, step = 0.01
+                   ),
+                   
+                   selectInput(
+                     inputId = "in_1_3_plottype",
+                     label = "Select plottype:",
+                     choices = c("circle", "square", "ellipse", "number", "shade",
+                                 "color", "pie")
+                   ),
+                   
+                   selectInput(
+                     inputId = "in_1_3_order",
+                     label = "Select ordering:",
+                     choices = c("hclust", "FPC", "alphabet", "AOE", "original")
+                   ),
+                   
+                   selectInput(
+                     inputId = "in_1_3_cortype",
+                     label = "Select correlation type:",
+                     choices = c("pearson", "spearman") # kendall is too slow, spearman feasible on subset
+                   ),
+                   
+                   "This panel allows you for investigation of the correlation patterns.
+                   The treshold with spearmans row doesn't seem to function properly.
+                   Still add a tool - when you select one variable, you can see the variables with which
+                   correlation is highest."
+                   
+                 )
+               ),
+               
+               column(9,
+                      wellPanel(
+                        plotOutput(outputId = "out_1_3_main_plot", height = "725px")
+                      ))
              ))),
-      
-      fluidRow(
-        column(3, "Complete here with an explanation of the panel."),
-        
-        column(3, align = "center",
-               wellPanel(tableOutput(outputId = "out_1_2_table1"))),
-        
-        column(3, align = "center",
-               wellPanel(tableOutput(outputId = "out_1_2_table2"))),
-        
-        column(3, align = "center",
-               wellPanel(tableOutput(outputId = "out_1_2_table3")))
-      )
-      
+    
+    tabPanel("1.4 Missing Values",
+             "This tab is for investegation of the patterns of missing values"
+             
+    )
+    
     )
   )
-  
-))

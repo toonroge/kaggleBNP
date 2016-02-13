@@ -1,6 +1,10 @@
-library(ggplot2) ; library(moments) ; library(dplyr) ; library(readr) ; library(data.table)
+library(ggplot2) ; library(moments) ; library(dplyr)
+library(readr) ; library(data.table) ; library(corrplot)
 
 data0 <- as.data.frame(fread("train.csv"))
+
+numeric_vars <- names(data0[, sapply(data0, is.numeric)])
+numeric_vars <- numeric_vars[!numeric_vars %in% c("ID", "target")]
 
 shinyServer(function(input, output) {
   ##################### Update data with responses from Input #####################
@@ -17,6 +21,25 @@ shinyServer(function(input, output) {
       data[[input$var]] <- round(data[[input$var]], 2)
     }
     data
+  })
+  
+  ##################### 1_3 Update Correlation matrix #####################
+  
+  corm <- reactive({
+    if (input$in_1_3_cortype == "spearman") {
+      set.seed(1)
+      cap <- 1200000 / (nrow(data0) * length(numeric_vars))
+      data0 <- data0[runif(nrow(data0)) < cap,]
+    }
+    
+    cor(x = data0[names(data0) %in% numeric_vars],
+        use = "pairwise.complete.obs",
+        method = input$in_1_3_cortype)
+    
+  })
+  
+  corm_melt <- reactive({
+    melt(corm()) %>% arrange(desc(abs(value))) %>% filter(value < 1)
   })
   
   ##################### Calculate indicators summarizing distribution #####################
@@ -241,9 +264,27 @@ shinyServer(function(input, output) {
   output$out_1_2_table3 <- renderTable({
     data <- data.frame(
       names = c("levels", "<100 obs", "pctg missing"),
-      values = c(out_1_2_levels(), out_1_2_less_100obs(), out_1_2_pctg_missing())
+      values = c(
+        out_1_2_levels(), out_1_2_less_100obs(), out_1_2_pctg_missing()
+      )
     )
   })
   
+  ################## Output elements panel 1_3 ########################
+  
+  
+  output$out_1_3_main_plot <- renderPlot({
+    
+    cor_vars <-
+      corm_melt() %>% filter(abs(value) > input$in_1_3_limit) %>% select(Var1)
+    cor_vars <- unique(as.character(cor_vars[,1]))
+    
+    filter_corm <- corm()[cor_vars, cor_vars]
+    
+    
+    corrplot(
+      filter_corm, order = input$in_1_3_order, method = input$in_1_3_plottype
+    )
+  })
   
 })
