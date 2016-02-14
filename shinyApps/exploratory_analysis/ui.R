@@ -1,27 +1,29 @@
-# Still change variable names; put reference to in/out + the tab for which it is used
-
-library(shiny) ; library(data.table)
-
-data <-
-  as.data.frame(fread("train.csv")) # never worked with data.table, change code later
-
-# extract numeric vars for selection in UI
-numeric_vars <- names(data[, sapply(data, is.numeric)])
-numeric_vars <- numeric_vars[!numeric_vars %in% c("ID", "target")]
-
-categorical_vars <- names(data[,!sapply(data, is.numeric)])
-categorical_vars <-
-  categorical_vars[!categorical_vars %in% c("v22")] # to prevent bug - fix stillS
-
 shinyUI(
   navbarPage(
     "Stage 1: Exploratory Analysis",
     
     tabPanel("1.0 Readme",
-             
              "This app is for exploratory analysis of the data."),
+    tabPanel("1.1 Dataset Overview",
+             dataTableOutput("infoTable")),
     
-    tabPanel("1.1 Numerics",
+    tabPanel("1.1Bis Levelwise exploration for categorical vars",
+             fluidPage(
+               fluidRow(column(3,
+                        wellPanel(
+                        selectInput(
+                        inputId = "catVar",
+                        label = "Select a categorical variable:",
+                        choices = categorical_vars
+                        ))),
+                        column(9,
+                        wellPanel(
+                        highchartOutput("hcPlot")
+                      ))) 
+             )
+    ),
+    
+    tabPanel("1.2 Numerics",
              
              fluidPage(
                fluidRow(column(
@@ -83,7 +85,7 @@ shinyUI(
                
              )),
     tabPanel(
-      "1.2 Categorical",
+      "1.3 Categorical",
       
       fluidPage(
         fluidRow(column(
@@ -136,7 +138,7 @@ shinyUI(
       )
       ),
     
-    tabPanel("1.3 Correlations",
+    tabPanel("1.4 Correlations",
              
              fluidPage(fluidRow(
                column(
@@ -181,17 +183,17 @@ shinyUI(
                       ))
                ))),
     
-    tabPanel("1.4 Missings",
+    tabPanel("1.5 Missings",
              
              fluidPage(fluidRow(
                wellPanel(plotOutput(outputId = "out_1_4_main_plot", height = "800px"))
              ))),
     
-    tabPanel("1.5 PCA",
+    tabPanel("1.6 PCA",
              
              "package factoMineR, will need to work on a subset probably, do clustering also"),
     
-    tabPanel("1.6 One-way on target",
+    tabPanel("1.7 One-way on target",
              
              fluidPage(
                fluidRow(column(
@@ -215,7 +217,7 @@ shinyUI(
                    )
                  )))),
     
-    tabPanel("1.7 Two way on target",
+    tabPanel("1.8 Two way on target",
              
              "You select the variables and get to see the effect on the target,
              visualization conditional on being numeric/categorical, 

@@ -1,19 +1,5 @@
-library(ggplot2) ; library(moments) ; library(dplyr)
-library(readr) ; library(data.table) ; library(corrplot)
-library(gridExtra)
-
-data0 <- as.data.frame(fread("train.csv"))
-
-numeric_vars <- names(data0[, sapply(data0, is.numeric)])
-numeric_vars <- numeric_vars[!numeric_vars %in% c("ID", "target")]
-
-data_missing <- data0
-data_missing$rand <- runif(nrow(data_missing))
-data_missing <- missing_data.frame(subset(data_missing, rand < 0.005))
-data_missing$rand <- NULL
-
 shinyServer(function(input, output) {
-  ##################### Update data with responses from Input #####################
+  ##################### Update data with responses from Input ##########
   
   data <- reactive({
     data <- data0
@@ -29,16 +15,30 @@ shinyServer(function(input, output) {
     data
   })
   
+  
+  statTbl <- reactive({
+    return(stats(DT = dataAxaml, varnames = input$catVar, 
+                 elements = "binaryTarget"))
+  })
+  
+  output$infoTable <- renderDataTable({ci})
+  
+  output$hcPlot <- renderHighchart({
+    st <- statTbl()
+    nm = names(st)[1]
+    axaml::plotter(st, y1 = "exposure", y2 = "binaryTarget")[[nm]]
+  })
+  
   ##################### 1_3 Update Correlation matrix #####################
   
   corm <- reactive({
     if (input$in_1_3_cortype == "spearman") {
       set.seed(1)
       cap <- 1200000 / (nrow(data0) * length(numeric_vars))
-      data0 <- data0[runif(nrow(data0)) < cap,]
+      data <- data[runif(nrow(data0)) < cap,]
     }
     
-    cor(x = data0[names(data0) %in% numeric_vars],
+    cor(x = data[names(data) %in% numeric_vars],
         use = "pairwise.complete.obs",
         method = input$in_1_3_cortype)
     
@@ -164,7 +164,7 @@ shinyServer(function(input, output) {
   })
   
   ##################### Output elements #####################
-  
+  ##################### 
   output$main_plot <- renderPlot({
     # Part not depending on whether vertical lines or not
     p <- ggplot(data(), aes(x = data()[[input$var]])) +
@@ -296,17 +296,17 @@ shinyServer(function(input, output) {
   ################## Output elements panel 1_4 ########################
   
   output$out_1_4_main_plot <- renderPlot({
-    image(data_missing)
+    image(as.matrix(data_missing[,numeric_vars, with = F]))
   })
 
 ################## Output elements panel 1_4 ########################
 
 output$out_1_6_main_plot <- renderPlot({
   
-  p1 <- ggplot(data0, aes(x = data0[[input$in_1_6_var]], y = target))
+  p1 <- ggplot(data, aes(x = data[[input$in_1_6_var]], y = target))
   p1 <- p1 + geom_smooth()
   
-  p2 <- ggplot(data0, aes(x = data0[[input$in_1_6_var]], y = ..density..))
+  p2 <- ggplot(data, aes(x = data[[input$in_1_6_var]], y = ..density..))
   p2 <- p2 + geom_density()
   
   grid.arrange(p1, p2, heights = c(3,1))
