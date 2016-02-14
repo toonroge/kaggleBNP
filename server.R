@@ -1,10 +1,16 @@
 library(ggplot2) ; library(moments) ; library(dplyr)
 library(readr) ; library(data.table) ; library(corrplot)
+library(gridExtra)
 
 data0 <- as.data.frame(fread("train.csv"))
 
 numeric_vars <- names(data0[, sapply(data0, is.numeric)])
 numeric_vars <- numeric_vars[!numeric_vars %in% c("ID", "target")]
+
+data_missing <- data0
+data_missing$rand <- runif(nrow(data_missing))
+data_missing <- missing_data.frame(subset(data_missing, rand < 0.005))
+data_missing$rand <- NULL
 
 shinyServer(function(input, output) {
   ##################### Update data with responses from Input #####################
@@ -287,4 +293,24 @@ shinyServer(function(input, output) {
     )
   })
   
+  ################## Output elements panel 1_4 ########################
+  
+  output$out_1_4_main_plot <- renderPlot({
+    image(data_missing)
+  })
+
+################## Output elements panel 1_4 ########################
+
+output$out_1_6_main_plot <- renderPlot({
+  
+  p1 <- ggplot(data0, aes(x = data0[[input$in_1_6_var]], y = target))
+  p1 <- p1 + geom_smooth()
+  
+  p2 <- ggplot(data0, aes(x = data0[[input$in_1_6_var]], y = ..density..))
+  p2 <- p2 + geom_density()
+  
+  grid.arrange(p1, p2, heights = c(3,1))
+  
+  })
+
 })
