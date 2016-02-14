@@ -21,7 +21,7 @@ shinyUI(
              
              "This app is for exploratory analysis of the data."),
     
-    tabPanel("1.1 Numeric Variables One Way",
+    tabPanel("1.1 Numerics",
              
              fluidPage(
                fluidRow(column(
@@ -67,9 +67,10 @@ shinyUI(
                       ))),
                
                fluidRow(
-                 
-                 column(2, offset = 3, align = "center",
-                        wellPanel(tableOutput(outputId = "out_1_1_table1"))),
+                 column(
+                   2, offset = 3, align = "center",
+                   wellPanel(tableOutput(outputId = "out_1_1_table1"))
+                 ),
                  column(2, align = "center",
                         wellPanel(tableOutput(outputId = "out_1_1_table2"))),
                  
@@ -78,11 +79,11 @@ shinyUI(
                  
                  column(3, align = "center",
                         wellPanel(tableOutput(outputId = "out_1_1_table4")))
-                 )
+               )
                
-               )),
+             )),
     tabPanel(
-      "1.2 Categorical variables one way",
+      "1.2 Categorical",
       
       fluidPage(
         fluidRow(column(
@@ -120,21 +121,22 @@ shinyUI(
                ))),
         
         fluidRow(
-          
-          column(3, offset = 3, align = "center",
-                 wellPanel(tableOutput(outputId = "out_1_2_table1"))),
+          column(
+            3, offset = 3, align = "center",
+            wellPanel(tableOutput(outputId = "out_1_2_table1"))
+          ),
           
           column(3, align = "center",
                  wellPanel(tableOutput(outputId = "out_1_2_table2"))),
           
           column(3, align = "center",
                  wellPanel(tableOutput(outputId = "out_1_2_table3")))
-          )
-        
         )
-    ),
+        
+      )
+      ),
     
-    tabPanel("1.3 Correlation Analysis",
+    tabPanel("1.3 Correlations",
              
              fluidPage(fluidRow(
                column(
@@ -177,12 +179,55 @@ shinyUI(
                       wellPanel(
                         plotOutput(outputId = "out_1_3_main_plot", height = "725px")
                       ))
+               ))),
+    
+    tabPanel("1.4 Missings",
+             
+             fluidPage(fluidRow(
+               wellPanel(plotOutput(outputId = "out_1_4_main_plot", height = "800px"))
              ))),
     
-    tabPanel("1.4 Missing Values",
-             "This tab is for investegation of the patterns of missing values"
+    tabPanel("1.5 PCA",
              
-    )
+             "package factoMineR, will need to work on a subset probably, do clustering also"),
     
+    tabPanel("1.6 One-way on target",
+             
+             fluidPage(
+               fluidRow(column(
+                 3,
+                 wellPanel(
+                   selectInput(
+                     inputId = "in_1_6_var",
+                     label = "Select your numeric variable:",
+                     choices = numeric_vars
+                   ),
+                   
+                   "For the moment only numeric variables are chosen.
+                   For numeric vars we should be able to select transformations,
+                   for categorical vars we should be able to create a group others"
+                   
+
+                   )),
+                 column(
+                   9, wellPanel(
+                     wellPanel(plotOutput(outputId = "out_1_6_main_plot", height = "600"))
+                   )
+                 )))),
+    
+    tabPanel("1.7 Two way on target",
+             
+             "You select the variables and get to see the effect on the target,
+             visualization conditional on being numeric/categorical, 
+             think how to visualize effect of missing on the target,
+             
+             visualization if both numeric, fit bivariate gam with mgcv,
+             next predict on a raster and visualize with geom_raster,
+             
+             if numeric and factor, do univariate gam for numeric and use facet_grid, but group
+              levels with low occurence,
+             
+             if both factor, use heatmap, but group levels with low occurence")
+    
+             )
     )
-  )
