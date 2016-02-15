@@ -299,14 +299,14 @@ shinyServer(function(input, output) {
       image(data_missing)
   })
 
-################## Output elements panel 1_4 ########################
+################## Output elements panel 1_6 ########################
 
 output$out_1_6_main_plot <- renderPlot({
 
-  p1 <- ggplot(data, aes(x = data[[input$in_1_6_var]], y = target))
+  p1 <- ggplot(data0, aes(x = data0[[input$in_1_6_var]], y = target))
   p1 <- p1 + geom_smooth()
 
-  p2 <- ggplot(data, aes(x = data[[input$in_1_6_var]], y = ..density..))
+  p2 <- ggplot(data0, aes(x = data0[[input$in_1_6_var]], y = ..density..))
   p2 <- p2 + geom_density()
 
   grid.arrange(p1, p2, heights = c(3,1))
