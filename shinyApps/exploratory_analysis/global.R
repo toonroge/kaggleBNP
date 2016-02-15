@@ -10,9 +10,9 @@ library(shiny)
 library(mi)
 library(assertthat)
 library(highcharter)
+library(mgcv)
 
 load("../../data/data.RData")
-# load("data/data.Rdata")
 
 set.seed(1)
 

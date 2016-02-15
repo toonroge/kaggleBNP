@@ -314,3 +314,8 @@ output$out_1_6_main_plot <- renderPlot({
   })
 
 })
+
+################## Output elements panel 1_8 ########################
+
+
+
