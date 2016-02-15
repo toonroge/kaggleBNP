@@ -13,6 +13,9 @@ library(highcharter)
 
 load("../../data/data.RData")
 # load("data/data.Rdata")
+
+set.seed(1)
+
 data0 = train
 data_missing <- data0
 data_missing$rand <- runif(nrow(data_missing))

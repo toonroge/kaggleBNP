@@ -33,12 +33,12 @@ shinyServer(function(input, output) {
 
   corm <- reactive({
     if (input$in_1_3_cortype == "spearman") {
-      set.seed(1)
       cap <- 1200000 / (nrow(data0) * length(numeric_vars))
-      data <- data[runif(nrow(data0)) < cap,]
+      data0 <- data0[runif(nrow(data0)) < cap,]
+
     }
 
-    cor(x = data[names(data) %in% numeric_vars],
+    cor(x = data0[, numeric_vars, with = F],
         use = "pairwise.complete.obs",
         method = input$in_1_3_cortype)
 
