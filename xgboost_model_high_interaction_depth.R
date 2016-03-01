@@ -3,6 +3,8 @@
 # one hot encoding for other factor variables  
 # xgboost on resulting numeric matrix
 
+# public LB score lower (better) than local CV score by about 0.003
+
 ######## TO DO #######
 # try base 26 encoding of v22 
 # check tree to see how xgboost handles missing values
@@ -154,8 +156,8 @@ input_logistic_train_many_A <- train_many_A_sparse
 input_logistic_train_many_B <- train_many_B_sparse
 response_logistic_train_many_A <- as.factor(train_df$target[in_A])
 response_logistic_train_many_B <- as.factor(train_df$target[- in_A])
-model_glmnet_train_many_A <- cv.glmnet(x = input_logistic_train_many_A, y = response_logistic_train_many_A, family = "binomial", alpha = 1, nfolds = 3)
-model_glmnet_train_many_B <- cv.glmnet(x = input_logistic_train_many_B, y = response_logistic_train_many_B, family = "binomial", alpha = 1, nfolds = 3)
+model_glmnet_train_many_A <- cv.glmnet(x = input_logistic_train_many_A, y = response_logistic_train_many_A, family = "binomial", alpha = 1, nfolds = 10)
+model_glmnet_train_many_B <- cv.glmnet(x = input_logistic_train_many_B, y = response_logistic_train_many_B, family = "binomial", alpha = 1, nfolds = 10)
 plot(model_glmnet_train_many_A)
 model_glmnet_train_many_A$lambda.min
 coef(model_glmnet_train_many_A)
