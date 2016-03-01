@@ -9,7 +9,7 @@ Elements that should be included:
 
 * Exploratory numeric features
 * Exploratory categorical features
-* Analysis of correlations and relations between features
+* Analysis of correlations and relations between features (nice analysis on https://www.kaggle.com/c/bnp-paribas-cardif-claims-management/forums/t/19240/analysis-of-duplicate-variables-correlated-variables-large-post)
 * Analysis of missing values
 * One way analysis of numeric on the response
 * One way analysis of categorical on the response
@@ -51,23 +51,3 @@ Based on the previous interpretations, leverage different models in ensembles an
 * Some models better for some clusters as other models?
 * Add this new features + model predictions (+ original variables) in new blend,
 probably models that are good in finding interactions...
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
