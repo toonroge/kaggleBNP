@@ -1,4 +1,4 @@
-# defines functions for feature engineering
+# defines functions for data cleaning
 # Toon Roge
 
 # takes a vector and caps lowest and highest values
@@ -261,12 +261,58 @@ replace_blank_categorical <- function(data) {
       for (var in categorical_vars) {
             data[[var]][data[[var]] == ""] <- "MISSING"
       }
+      return(data)
+}
 
+get_best_feature <- function(target, var1, var2){
+      require(randomForest)
+      db <- data.frame(target = target, var1 = var1, var2 = var2) %>% na.omit()
+      rf1 <- randomForest(y = as.factor(db$target),
+                         x = db[,2] %>% as.data.frame(),
+                         ntree = 75
+                         )
+      rf2 <- randomForest(y = as.factor(db$target),
+                          x = db[,3] %>% as.data.frame(),
+                          ntree = 75
+      )
+      err2 <- rf2$err.rate[,1] %>% min()
+      err1 <- rf1$err.rate[,1] %>% min()
+      x <- err2 < err1
+      print(paste("Error rates:", as.character(round(err1, 4)), as.character(round(err2, 4))))
+      return(x + 1) # returns 2 if second features is best, 1 if first feature is best
+}
+
+remove_two_correlated_vars <- function(data, var1, var2) {
+      # This function takes data.table and the names of two corr. variables as input
+      # next it checks if both variables are present
+      # if so it will fit a linear model and remove one variables by the residuals of this linear model
+      if (is.null(data[[var1]]) | is.null(data[[var2]])) {
+            print("Already deleted one variable")
+            print("==================================")
+            return(data)
+      } else{
+            data$x <- data[[var1]]
+            data$y <- data[[var2]]
+            name <- paste(var1, var2, "_RESLM", sep = "")
+            data[[name]] <-
+                  predict(lm(x ~ y, data), data) - data$x
+            data$x <- NULL ; data$y <- NULL
+            best_feature <- get_best_feature(subset(data, rand < 20)$target, subset(data, rand < 20)[[var1]],
+                                             subset(data, rand < 20)[[var2]])
+            if (best_feature == 2) {
+                  data[[var1]] <- NULL
+                  print(paste("delete", var1))
+            } else{
+                  data[[var2]] <- NULL
+                  print(paste("delete", var2))
+            }
+            print("==================================")
+            return(data)
+      }
 }
 
 manual_cleaning <- function(data) {
-      # leverage forum insight and some manual explorations
-      # see if we continue with this manual approach or if we can automate
+      ### FIRST: MANUALLY TREAT SOME INSIGHT FROM FORUM ###
 
       # duplicate variable v91 and v107
       data$v107 <- NULL #keep v91
@@ -286,31 +332,74 @@ manual_cleaning <- function(data) {
       data$v12 <- NULL ; data$v10 <-NULL
       data$v34 <- NULL ; data$v40 <- NULL
 
-      # v58 almost equals v100
-      data$v58v100_RESLM <-
-            predict(lm(v58 ~ v100, data), data) - data$v58
-data$v100 <- NULL
-
       # v72 = v129 + v38 + v62 (Exact)
       data$v72_ISZERO <- ifelse(data$v72 == 0, 1, 0)
-      data$v129v72_RATIO <-
+      data$v129v72_EX_RATIO <-
             ifelse(
                   data$v72 == 0, mean(data$v129, na.rm = T) / mean(data$v72, na.rm = T),
                   data$v129 / data$v72
             )
-      data$v138v72_RATIO <-
+      data$v38v72_EX_RATIO <-
             ifelse(
-                  data$v72 == 0, mean(data$v138, na.rm = T) / mean(data$v72, na.rm = T),
-                  data$v138 / data$v72
+                  data$v72 == 0, mean(data$v38, na.rm = T) / mean(data$v72, na.rm = T),
+                  data$v38 / data$v72
             )
-      data$v62v72_RATIO <-
+      data$v62v72_EX_RATIO <-
             ifelse(
                   data$v72 == 0, mean(data$v162, na.rm = T) / mean(data$v72, na.rm = T),
                   data$v62 / data$v72
             )
-data$v62 <- NULL ; data$v38 <- NULL ; data$v129 <- NULL
+      data$v62 <- NULL ; data$v38 <- NULL ; data$v129 <- NULL
 
+      return(data)
+
+}
+
+
+removing_correlated_features <- function(data, cor_value = 0.85){
+      # variables who are really strongly correlated --> strategy keep 1 + the noise of lm(v1 ~v2)
+
+      # 1. extract numeric variables
+      numeric_vars <- names(data)[sapply(data, is.numeric)]
+      numeric_vars <- numeric_vars[!numeric_vars %in% c("ID", "target", "rand")]
+
+      # 2. construct vectors with correlated features
+      print("Calculation of correlation Matrix")
+      corm <- cor(x = data[, numeric_vars, with = F],
+                  use = "pairwise.complete.obs")
+      cord <-
+            melt(corm) %>% dplyr::arrange(desc(abs(value))) %>% dplyr::filter(value < 1 &
+                                                                                    value > cor_value)
+      var1 <- as.character(cord$Var1) ; var2 <- as.character(cord$Var2)
+
+      # 3. remove correlated features and add the noise as a variable
+      if (length(var1) == 0){
             return(data)
+      } else{
+            for (i in 1:nrow(cord)){
+                  print(paste(as.character(var1[i]), as.character(var2[i]), as.character(round(cord$value[i], 4))))
+                  data <- data %>%
+                        remove_two_correlated_vars(var1[i], var2[i])
+            }
+            return(data)
+      }
+
+}
+
+do_data_cleaning <- function(data, cor_value = 0.8){
+
+      # 1. Manual cleaning
+      data <- manual_cleaning(data)
+
+      #2. Automatic removal: if x and y are correlated; replace by x and residuals of lm(y ~ x)
+      # --> Use loop, because noise can be explained by other features
+      test <- names(data) ; i <- 1 ; print(i)
+      data <- removing_correlated_features(data, cor_value = cor_value)
+      while(!isTRUE(all.equal(names(data), test))){
+            test <- names(data) ; i <- i + 1
+            data <- removing_correlated_features(data, cor_value = cor_value) ; print(i)
+      }
+      return(data)
 }
 
 # MCA & PCA can be interesting and will probably be quiker

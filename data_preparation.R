@@ -14,13 +14,17 @@ test <- fread("data/test.csv") ; test$target <- 0 ; test$rand <- 101
 
 data <- rbind(train, test, fill = T)
 
-# replace blank categorical levels by unknown
-# remove some variables
-# flag others
+# PCA might be more efficient
+# For categorical variables --> MCA
+# You can also find clusters and then do PCA for clusters
+#
+# Printing still to be improved
+#
+# add still the code from test_glmnet.R in function for transforming categorical in numerical
 
 data <- data %>%
             replace_blank_categorical() %>%
-            manual_cleaning(data) %>%
+            do_data_cleaning(cor_value = 0.8) %>%
             flag_original_variables(ignore = c("ID", "target", "rand")) %>%
             std_normal_transform(ignore = c("ID", "target", "rand")) %>%
             group_low_categorical(n = 750, max_length = 15) %>%
@@ -29,8 +33,3 @@ data <- data %>%
             missings_per_row(ignore_pattern = c("ID", "target", "GROUP_LOW_CATEG", "STD_NORM"))
 
 save(data, file = "data/featureData.Rdata")
-
-
-
-
-
