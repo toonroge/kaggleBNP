@@ -23,21 +23,25 @@ dummieData <-
       predict(dummies, newdata = data) %>% as.data.table() %>% cbind(data[,c("target"), with = F])
 
 no_vars <- c("ID", "target", "rand")
+dummieData$fold <- ifelse(dummieData$rand < 50, 1, 2)
 
 registerDoParallel(cores = 4)
 
-glmnet <- cv.glmnet(
-      x = as.matrix(dummieData[rand < 75, -no_vars, with = F]),
-      y = as.matrix(dummieData[rand < 75, c("target"), with = F]),
-      family = "binomial",
-      alpha = 0,
-      parallel = TRUE
-)
+for (fold in 1:2){
 
-plot(glmnet)
+      glmnet <- cv.glmnet(
+            x = as.matrix(dummieData[fold == fold, -no_vars, with = F]),
+            y = as.matrix(dummieData[fold == fold, c("target"), with = F]),
+            family = "binomial",
+            alpha = 0,
+            parallel = TRUE
+      )
 
-coefs <- coef.cv.glmnet(glmnet, s=c("lambda.1se","lambda.min")) %>% as.matrix()
-ridge_data <- data.frame(var = row.names(coefs), value = as.numeric(coefs[, 1]))
+      coefs <- coef.cv.glmnet(glmnet, s="lambda.1se") %>% as.matrix()
+      ridge_data <- data.frame(var = row.names(coefs), value = as.numeric(coefs[, 1])) %>% as.data.table()
+
+}
+
 
 # apply a stringsplit on the value
 
@@ -46,8 +50,15 @@ custom_split <- function(x){
 }
 
 splitdata <- lapply(as.character(ridge_data$var), custom_split) %>% as.data.frame() %>% t() %>% as.data.frame()
-row.names(splitdata) <- NULL
-ridge_data <- cbind(ridge_data, splitdata)
+splitdata <- sapply(splitdata, as.character) %>% as.data.table()
+ridge_data <- cbind(ridge_data, splitdata) %>% as.data.table()
+
+categorical_vars <- names(data)[!sapply(data, is.numeric)]
+
+for (var in categorical_vars){
+      coefs <- unique(ridge_data[V1 == var, 2:4, with = F])
+      data[[var]] <-
+}
 
 # get categorical variables in data and replace with coefs from ridge_data
 # This way we transformed categorical variables into continuous data,
