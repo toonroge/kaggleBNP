@@ -402,5 +402,106 @@ do_data_cleaning <- function(data, cor_value = 0.8){
       return(data)
 }
 
+transform_cat_to_ridge_coefs <- function(db, cores = 4, alpha = 0.25,
+                                         keep_pattern,
+                                         ignore_pattern,
+                                         ID = "ID",
+                                         random = "rand", # need to be 1-100 for training and > 100 for test
+                                         target = "target"){
+      # takes a database as input
+      # detects the categorical variables in the keep_pattern
+      # excluding the ones in ignore_pattern
+      # fits elasticnet regression on two folds of the data (75pct ridge as default)
+      # returns the input data, but with elasticnet predictions for each fold added
+      # + a variable indicating to which fold each observation belonged during the fitting
+
+      require("glmnet")
+      require("caret")
+      require("doParallel")
+      require("reshape2")
+      require("data.table")
+      require("dplyr")
+
+      vars <- c()
+      for (pattern in keep_pattern) {
+            vars <- c(vars, grep(pattern, names(db), value = TRUE))
+      }
+
+      ignore_vars <- c()
+      for (pattern in ignore_pattern) {
+            ignore_vars <-
+                  c(ignore_vars, grep(pattern, names(db), value = TRUE))
+      }
+      vars <- vars[!vars %in% ignore_vars]
+      vars_to_keep <- c(ID, random, target, vars)
+
+      data <- db[, vars_to_keep, with = F]
+      dummies <- dummyVars(target ~ ., data = data)
+      dummieData <-
+            predict(dummies, newdata = data) %>% as.data.table() %>% cbind(data[,target, with = F])
+
+      no_vars <- c(ID, random, target, "fold")
+
+      dummieData$test <- ifelse(dummieData[[random]] > 100, 1, 0)
+      dummieData[[random]] <- ifelse(dummieData[[random]] > 100, 100 * runif(nrow(dummieData)), dummieData[[random]])
+      dummieData$fold <- ifelse(dummieData[[random]] < 50, 1, 2)
+
+      registerDoParallel(cores = cores)
+
+      for (fold in 1:2){
+
+            print(paste("Running ridge regression fold:", as.character(fold), sep = " "))
+
+            glmnet <- cv.glmnet(
+                  x = as.matrix(dummieData[fold == fold & test == 0, -no_vars, with = F]),
+                  y = as.matrix(dummieData[fold == fold & test == 0, c("target"), with = F]),
+                  family = "binomial",
+                  alpha = alpha,
+                  parallel = TRUE
+            )
+
+            print("Fold has terminated.")
+
+            coefs <- coef.cv.glmnet(glmnet, s="lambda.min") %>% as.matrix()
+            ridge_data <- data.frame(var = row.names(coefs), value = as.numeric(coefs[, 1])) %>% as.data.table()
+
+            keep <- grepl("\\.", as.character(ridge_data$var))
+            ridge_data <- ridge_data[keep]
+            ridge_data <- cbind(ridge_data, colsplit(as.character(ridge_data$var), "\\.", c("variable", "level")))
+            ridge_data$var <- NULL
+
+            categorical_vars <- names(data)[!sapply(data, is.numeric)]
+
+            for (var in categorical_vars){
+                  print(paste("replacing the following categorical variable:", var, sep = " "))
+                  coef_table <- ridge_data[ridge_data$variable == var, c("value", "level"), with = F]
+                  names(coef_table)[names(coef_table) == "value"] = paste(var, "RIDGE_COEF_FOLD", as.character(fold), sep = "_")
+                  data <- merge(x = data, y = coef_table, by.x = var, by.y = "level", all.x = T)
+            }
+
+      }
+
+      datafold <- dummieData[, c(ID, "fold"), with = F]
+      names(datafold)[names(datafold) == "fold"] <- "RIDGE_FOLD"
+
+
+      keep_pattern = c("RIDGE_COEF_FOLD")
+      vars <- c()
+      for (pattern in keep_pattern) {
+            vars <- c(vars, grep(pattern, names(data), value = TRUE))
+      }
+      vars <- c(vars, ID)
+
+      data_ridge <- data[, vars, with = F]
+
+      db <- merge(x = db, y = datafold, by = ID, all.x = T)
+      db <- merge(x = db, y = data_ridge, by = ID, all.x = T)
+
+      return(db)
+
+}
+
+
+
 # MCA & PCA can be interesting and will probably be quiker
 # Also Multiple Factor Analysis where you group based on hierarchical clustering
