@@ -4,3 +4,5 @@
 *.csv
 data/
 test/
+.DS_Store
+finished_models_output/

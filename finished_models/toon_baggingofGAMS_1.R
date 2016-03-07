@@ -175,4 +175,4 @@ toon_baggingofGAMs_1 <-
       )
 
 # save
-save(toon_baggingofGAMs_1, file = "finished_models/toon_baggingofGAMs_1.Rdata")
+save(toon_baggingofGAMs_1, file = "finished_models_output/toon_baggingofGAMs_1.Rdata")
