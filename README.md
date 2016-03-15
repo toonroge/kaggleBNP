@@ -44,7 +44,7 @@ Since the key is to make different models I started with 2 regression models:
 Other (stronger) models should be made + probably try to improve the feature engineering part:
 I think interesting ideas might be:
 * XGBoost (with different interaction depths)
-* Extremely randomized trees
+* Extremely randomized trees (https://www.kaggle.com/chabir/bnp-paribas-cardif-claims-management/extratreesclassifier-score-0-45-v5/code)
 * knn
 * ...
 
