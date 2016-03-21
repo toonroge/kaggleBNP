@@ -38,21 +38,28 @@ We can then use the predictions of these models as meta-features.
 
 Since the key is to make different models I started with 2 regression models:  
 
-* toon_baggingofGAMS_2.R (around 0.474)
-* toon_elasticnet_01.R (around 0.471)
+* toon_baggingofGAMS_2.R (local cv 0.4744475)
+* toon_elasticnet_01.R (local cv 0.4702125)
+* toon_xgboost_02.R (local cv 0.4593891)
+* toon_extc_01.ipynb (local cv 0.4571919 ; public lb 0.45752)
 
 Other (stronger) models should be made + probably try to improve the feature engineering part:
 I think interesting ideas might be:
-* XGBoost (with different interaction depths)
-* Extremely randomized trees (https://www.kaggle.com/chabir/bnp-paribas-cardif-claims-management/extratreesclassifier-score-0-45-v5/code)
 * knn
 * ...
+
+Some more tuning of the models is possible (but tuning is more important in stage 5 I think)
 
 
 ### STAGE 4 ANALYSE DIFFERENCES AND COMBINE:
 
 I think we can make some correlation graphs + double lift plot, to analyze differences of different models.
 (Make small shiny app)
+
+I already did a quik comparison. The correlation between the models is around 0.85 - 0.95.
+The extc model has the lowest correlation with other models.
+The gam and the elasticnet model have a quite high correlation.
+Taking a simple weighted average (so no stacking yet - not really optimized the weights) already outperforms the best simple model (gives 0.4559 - more or less +200 places on lb)
 
 
 ### STAGE 5 ENSEMBLE
