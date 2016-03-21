@@ -501,6 +501,35 @@ transform_cat_to_ridge_coefs <- function(db, cores = 4, alpha = 0.25,
 
 }
 
+# from kaggle scripts
+na.roughfix2 <- function (object, ...) {
+      res <- lapply(object, roughfix)
+      structure(res, class = "data.frame", row.names = seq_len(nrow(object)))
+}
+
+#from kaggle scripts
+roughfix <- function(x) {
+      missing <- is.na(x)
+      if (!any(missing)) return(x)
+
+      if (is.numeric(x)) {
+            x[missing] <- median.default(x[!missing])
+      } else if (is.factor(x)) {
+            freq <- table(x)
+            x[missing] <- names(freq)[which.max(freq)]
+      } else {
+            stop("na.roughfix only works for numeric or factor")
+      }
+      x
+}
+
+# Convert v22 to hexavigesimal base - from kaggle scripts - not yet used
+az_to_int <- function(az) {
+      xx <- strsplit(tolower(az), "")[[1]]
+      pos <- match(xx, letters[(1:26)])
+      result <- sum( pos* 26^rev(seq_along(xx)-1))
+      return(result)
+}
 
 
 # MCA & PCA can be interesting and will probably be quiker
