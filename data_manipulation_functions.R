@@ -531,6 +531,135 @@ az_to_int <- function(az) {
       return(result)
 }
 
+clust_pca <- function(data, idvar, ignore, n_clust, clust_method = "hclust"){
 
-# MCA & PCA can be interesting and will probably be quiker
-# Also Multiple Factor Analysis where you group based on hierarchical clustering
+      require(data.table)
+      require(dplyr)
+      require(ClustOfVar)
+      require(FactoMineR)
+      require(stringr)
+
+      # FactoMineR doesn't work with data.table
+      data <- as.data.frame(data)
+      # select data for pca analysis
+      numeric_vars <- names(data)[sapply(data, is.numeric)]
+      output_data <- data[!names(data) %in% setdiff(numeric_vars, c(idvar, ignore))]
+      data <- data[names(data) %in% numeric_vars]
+      # data <- na.omit(data)
+      ind.sup <- which(!complete.cases(data))
+      id <- data[[idvar]]
+      data <- data[!names(data) %in% c(idvar, ignore)]
+      row.names(data) <- id
+
+      # define groups of clustered data
+      print("Clustering variables...")
+      if (clust_method == "kmeans"){
+            res <- kmeansvar(na.omit(data), init = n_clust)$var # list, row.names are variables
+      } else if (clust_method == "hclust"){
+            hclust <- hclustvar(na.omit(data))
+            res <- cutreevar(hclust, n_clust)$var # list, row.names are variables
+      } else{
+            print("clust_method should be kmeans or hclust")
+      }
+
+      # do a pca on each cluster - if more then 1 dimension
+      print("PCA for each cluster...")
+      new_data <- NULL
+      colweight <- c()
+      for (i in 1:n_clust){
+            print(i)
+            names <- row.names(res[[i]]) # extract vars in cluster
+            n <- length(names)
+            if (n > 1){
+                  # pca needed
+                  pca <- PCA(data[names(data) %in% names], graph = F, ncp = n, ind.sup = ind.sup)
+                  n_vars <- which(pca$eig$`cumulative percentage of variance` > 98) %>% min()
+                  colweight <- c(colweight,
+                                 rep(1 / sqrt(pca$eig$`eigenvalue`[1]), n_vars))
+                  # extract vars of pca
+                  out1 <- pca$ind$coord
+                  out2 <- pca$ind.sup$coord
+                  out1 <- out1[, 1:n_vars] %>% as.data.frame()
+                  out2 <- out2[, 1:n_vars] %>% as.data.frame()
+                  out1$dist <- pca$ind$dist
+                  out2$dist <- pca$ind.sup$dist
+                  out <- rbind(out1, out2)
+                  names(out)[1] <- "Dim.1" # because sometimes name got changed
+                  prefix <- paste(clust_method, str_pad(i, 2, pad = "0"), "pca", sep ="_")
+                  names(out) <- paste(prefix, names(out), sep = "_")
+                  out[[idvar]] <- row.names(out)
+            } else{
+                  # no pca needed
+                  out <- data[names(data) %in% names]
+                  colweight <- c(colweight, 1)
+                  prefix <- paste(clust_method, str_pad(i, 2, pad = "0"), "org", sep ="_")
+                  names(out) <- paste(prefix, names(out), sep = "_")
+                  out[[idvar]] <- row.names(out)
+            }
+
+            if (is.null(new_data)){
+                  new_data <- out
+            } else{
+                  # cbind did not work well with data.table
+                  new_data <- merge(new_data, out, by = idvar, all.x = T, sort = F)
+            }
+      }
+
+      # add this data to output data table
+      output_data <- merge(output_data, new_data, by = idvar, all.x=T)
+
+      # do again a PCA, but on previous results
+      print("PCA on previous pca output...")
+      keep_pattern <- c("pca_Dim", "_org")
+      var_names <- c()
+      for (pattern in keep_pattern) {
+            var_names <- c(var_names, grep(pattern, names(new_data), value = TRUE))
+      }
+      new_data <- new_data[names(new_data) %in% var_names]
+      pca <- PCA(new_data, col.w = colweight, graph = F, ncp = ncol(new_data), ind.sup = ind.sup)
+      n_vars <- which(pca$eig$`cumulative percentage of variance` > 98) %>% min()
+      out1 <- as.data.frame(pca$ind$coord)[, 1:n_vars]
+      out2 <- as.data.frame(pca$ind$coord)[, 1:n_vars]
+      out1$dist <- pca$ind$dist
+      out2$dist <- pca$ind$dist
+      out <- rbind(out1, out2)
+      prefix <- paste("gpca", sep ="_")
+      names(out) <- paste(prefix, names(out), sep = "_")
+      out[[idvar]] <- row.names(out)
+
+      # add global pca data to output data
+      output_data <- merge(output_data, out, by = idvar, all.x=T, sort = F)
+      return(as.data.table(output_data))
+}
+
+
+stacking_features <- function(names){
+
+      # put all predictions in df
+      for (i in 1:length(names)){
+            path <- paste("./finished_models_output/", names[i], "_stacking.csv", sep = "")
+            db <- read.csv(path)
+            db$rand <- NULL
+            db$fold <- NULL
+            db$X <- NULL
+            names(db)[names(db) != "ID"] <- names[i]
+            if (i == 1){
+                  out <- db
+            } else{
+                  out <- merge(out, db, "ID")
+            }
+      }
+
+      # get some extra features
+      out$stacker_pctgsd <- rowSds(out[,names] %>% as.matrix(), na.rm=TRUE) /
+                              rowMeans(out[,names] %>% as.matrix(), na.rm=TRUE)
+      out$stacker_min <- rowQuantiles(out[,names] %>% as.matrix(), na.rm=TRUE, probs = 0)
+      out$stacker_max <- rowQuantiles(out[,names] %>% as.matrix(), na.rm=TRUE, probs = 0)
+      out$stacker_median <- rowQuantiles(out[,names] %>% as.matrix(), na.rm=TRUE, probs = 0)
+      out$stacker_mean <- rowMeans(out[,names] %>% as.matrix(), na.rm=TRUE)
+
+      return(out)
+
+
+}
+
