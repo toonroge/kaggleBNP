@@ -24,7 +24,7 @@ cat_vars <- c("v3", "v22", "v24",
 
 # select model variables based on the suffix
 keep_pattern <-
-      c(cat_vars, "gpca") # to keep
+      c(cat_vars, "hclust") # to keep
 ignore_pattern <-
       c() # if matching these strings don't keep
 vars_to_keep <- c()
