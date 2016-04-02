@@ -659,7 +659,31 @@ stacking_features <- function(names){
       out$stacker_mean <- rowMeans(out[,names] %>% as.matrix(), na.rm=TRUE)
 
       return(out)
-
-
 }
 
+get_rank_mapping <- function(x){
+      rank_mapping <- table(x) %>% as.data.frame()
+      rank_mapping$rank <- round(1000 * rank(rank_mapping$Freq, ties.method = "random")
+                                / nrow(rank_mapping), 2)
+      rank_mapping$Freq <- NULL
+      names(rank_mapping) <- c("var", "rank")
+
+      x <-data.frame(x = x, i = 1:length(x))
+
+      out <- merge(x, rank_mapping, by.x = "x", by.y = "var", sort = F)
+      out <- out[order(out$i), ]
+      out$x <- NULL ; out$i <- NULL
+      return(out$rank)
+}
+
+transform_catvars_to_rank <- function(data, vars = NULL){
+      if(is.null(vars)){
+            vars <-
+                  names(data)[!sapply(data, is.numeric)]
+      }
+
+      new_data <- data[, vars, with = F]
+      new_data <- sapply(new_data, get_rank_mapping) %>% as.data.table()
+      colnames(new_data) <- paste(colnames(new_data), "CATRANK", sep = "_")
+      cbind(data, new_data)
+}
