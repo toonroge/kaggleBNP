@@ -5,4 +5,14 @@
 data/
 test/
 .DS_Store
+shinyApps/.DS_Store
 finished_models_output/
+test*
+.Rhistory
+*.html
+*.png
+*.Rproj
+toon_xgboost_01.R
+shinyApps/.DS_Store
+finished_models/.ipynb_checkpoints/
+shinyApps/exploratory_analysis/data.Rdata

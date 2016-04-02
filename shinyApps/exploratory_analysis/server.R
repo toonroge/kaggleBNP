@@ -282,7 +282,7 @@ shinyServer(function(input, output) {
   output$out_1_3_main_plot <- renderPlot({
 
     cor_vars <-
-      corm_melt() %>% filter(abs(value) > input$in_1_3_limit) %>% select(Var1)
+      corm_melt() %>% filter(abs(value) > input$in_1_3_limit) %>% dplyr::select(Var1)
     cor_vars <- unique(as.character(cor_vars[,1]))
 
     filter_corm <- corm()[cor_vars, cor_vars]

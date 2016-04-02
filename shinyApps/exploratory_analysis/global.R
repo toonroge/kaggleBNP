@@ -14,6 +14,7 @@ library(mgcv)
 
 load("../../data/data.RData")
 
+
 set.seed(1)
 
 data0 = train
