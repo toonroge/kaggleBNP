@@ -16,3 +16,4 @@ toon_xgboost_01.R
 shinyApps/.DS_Store
 finished_models/.ipynb_checkpoints/
 shinyApps/exploratory_analysis/data.Rdata
+*.Rdata
